@@ -73,8 +73,21 @@ export const getActiveEvents = (offset: number, limit: number) =>
   view<Page<EventRecord>>(() => readAdapter.getActiveEvents(offset, limit));
 export const getEvent = (id: number | string) => view<EventRecord>(() => readAdapter.getEvent(id));
 export const getEventCount = async () => (await getConfig()).event_count;
-export const getClaimRequirements = (id: number | string, wallet: string) =>
-  view<ClaimRequirements>(() => readAdapter.getClaimRequirements(id, wallet));
+/**
+ * The contract computes claim_open from the node clock, which a read call may not have; it then
+ * reports false even inside the window. The claim transaction itself always has a clock and the
+ * contract re-checks the window there, so the UI recomputes the flag from the event record and the
+ * browser clock when the contract says "closed". A wrong guess only costs a reverted transaction.
+ */
+export async function getClaimRequirements(id: number | string, wallet: string): Promise<ClaimRequirements> {
+  const req = await view<ClaimRequirements>(() => readAdapter.getClaimRequirements(id, wallet));
+  if (req.claim_open) return req;
+  const ev = await view<EventRecord>(() => readAdapter.getEvent(id));
+  const now = new Date().toISOString().slice(0, 19) + "Z";
+  const open =
+    ev.verified && ev.status === "active" && !ev.paused && ev.claim_from <= now && now <= ev.claim_until;
+  return { ...req, claim_open: open };
+}
 export const getVerifyToken = (id: number | string) => view<string>(() => readAdapter.getVerifyToken(id));
 export const getWalletBadges = (wallet: string, offset: number, limit: number) =>
   view<Page<BadgeRow>>(() => readAdapter.getWalletBadges(wallet, offset, limit));
