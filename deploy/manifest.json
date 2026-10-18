@@ -1,0 +1,15 @@
+{
+  "contract": "EventAttendance",
+  "version": "0.3",
+  "network": "studionet",
+  "source_path": "contracts/EventAttendance.py",
+  "source_sha256": "1ac44e30e6b7f36ee7e93d3acb234aa313727e217f6bd7c97292a0375e786c4d",
+  "constructor_args": [],
+  "deployed": true,
+  "address": "0x68f01b081fcc59394b68f743672DeCC317d32b01",
+  "deployed_source_sha256": "1ac44e30e6b7f36ee7e93d3acb234aa313727e217f6bd7c97292a0375e786c4d",
+  "deployed_at": "2026-10-18T13:51:53Z",
+  "deployed_by": "0x09180Dde6760F040B836B21d35C51D9de7cD0904",
+  "notes": "Deployed to studionet. deployed_at is the explorer's creation time (18:51:53 PKT, UTC+5) converted to UTC.",
+  "deploy_tx_hash": "0x4001e305502f4ccbaf9ef14cf60df7be749fcbd2fd1a4b9581f6ae0dc42f8b5e"
+}
