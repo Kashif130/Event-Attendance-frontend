@@ -101,6 +101,29 @@ def _valid_https_or_empty(u: str) -> bool:
     return u == "" or (u.startswith("https://") and len(u) <= MAX_IMAGE)
 
 
+def _normalize_node_time(raw: str) -> str:
+    """Node clock to YYYY-MM-DDTHH:MM:SSZ. Accepts fractional seconds and a UTC marker
+    (Z, +00:00, +0000, or none); any other offset or shape returns an empty string."""
+    r = str(raw).strip()
+    if len(r) < 19:
+        return ""
+    base = r[:19]
+    rest = r[19:]
+    if rest.startswith("."):
+        k = 1
+        while k < len(rest) and rest[k] in "0123456789":
+            k += 1
+        if k == 1:
+            return ""
+        rest = rest[k:]
+    if rest not in ("", "Z", "z", "+00:00", "+0000", "+00"):
+        return ""
+    if len(base) > 10 and base[10] == " ":
+        base = base[:10] + "T" + base[11:]
+    iso = base + "Z"
+    return iso if _valid_iso(iso) else ""
+
+
 def _days_in_month(y: int, m: int) -> int:
     if m == 2:
         leap = (y % 4 == 0 and y % 100 != 0) or y % 400 == 0
@@ -531,8 +554,7 @@ class EventAttendance(gl.Contract):
         return f"{key}:{wallet.lower()}"
 
     def _now(self) -> str:
-        raw = str(gl.message_raw.get("datetime", ""))
-        return raw if _valid_iso(raw) else ""
+        return _normalize_node_time(str(gl.message_raw.get("datetime", "")))
 
     def _clock(self) -> str:
         now = self._now()
@@ -1280,6 +1302,16 @@ class EventAttendance(gl.Contract):
             "completed": done,
             "complete": done == len(ids),
             "series_badge_serial": claimed,
+        }
+
+    @gl.public.view
+    def debug_clock(self) -> dict:
+        """What the node supplies as the transaction clock, for diagnosing clock problems."""
+        raw = gl.message_raw.get("datetime", None)
+        return {
+            "raw": "" if raw is None else str(raw),
+            "normalized": self._now(),
+            "keys": sorted([str(k) for k in gl.message_raw.keys()]),
         }
 
     @gl.public.view
